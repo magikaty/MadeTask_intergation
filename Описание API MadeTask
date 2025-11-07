@@ -1,0 +1,198 @@
+Приложение 5. Описание API MadeTask.
+
+    1. Создание исполнителя
+Метод 
+POST /contractors/create
+
+Параметр	Тип	Описание
+first_name	string	имя, обязательный параметр
+last_name	string	фамилия, обязательный параметр
+father_name	string	отчество, необязательный параметр
+email	string	электронный адрес, обязательный параметр
+country	string	код страны из справочника, необязательный параметр
+phone	string	номер телефона, обязательный параметр
+specialization	string	код специализации, обязательный параметр
+
+Пример запроса: 
+POST /contractors/create
+Content-Type: application/json
+X-Partner-ID: 123456
+X-Signature: <signature>
+Authorization: Bearer <token>
+
+Успешный ответ: 
+200 Successful Response 
+
+{
+  "id": 123,
+  "email": "EMAIL@gmail.com"
+}
+
+Неуспешный ответ: 
+Http статус в диапазоне от 400 до 500
+
+{
+  "error": "email_not_found",
+  "message": "Email не указан"
+}
+
+    2. Создание задачи 
+Метод 
+POST v2/tasks
+
+Параметр	Тип	Описание
+name	string	наименование задачи, необязательный параметр
+description	string	информативное описание задачи. Минимальное количество символов = 10
+expired_at	datetime	срок завершения задачи, больше или равен текущий день плюс один, даты передаются в формате ISO8601, необязательный параметр
+cost	float	стоимость задачи, сумма, которую получит исполнитель за выполненную задачу
+currency	string	валюта (RUB, USD, EUR)
+contractor_id	integer	уникальный номер исполнителя
+category_id	integer	уникальный номер категории задачи из справочника, обязательный параметр
+service_id	integer	уникальный номер услуги из справочника, обязательный параметр
+external_id	string	идентификатор в системе заказчика, необязательный параметр
+
+Пример запроса: 
+POST /v2/tasks
+Content-Type: application/json
+X-Signature: <signature>
+Authorization: Bearer <token>
+
+{
+  "id": 33,
+  "name": null, 
+  "description": "ОПИСАНИЕ",
+  "status": "opened",
+  "expired_at": "YYYY-MM-DDTHH:MM:SS+00",
+  "created_at": "YYYY-MM-DDTHH:MM:SS+00",
+  "cost": 5000,
+  "cost_full": 5500,
+  "currency": "RUB",
+  "is_paid": true,
+  "contractor": {
+    "id": 15,
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@test.ru"
+  },
+  "category": {
+    "id": 1,
+    "code": "Интернет-реклама",
+    "label": "Интернет-реклама"
+  },
+  "service": {
+    "id": 1,
+    "label": "Создание рекламных материалов (видео)",
+    "act_name": "Работы по созданию аудиовизуальных рекламных материалов для заказчика в электронной форме"
+  },
+  "external_id": "9c4f3ac6-6005-11ed-9b6a-0242ac120002"
+}
+
+Успешный ответ: 2
+00 Successful Response 
+
+{
+  "task_id": "67890",
+  "status": "created"
+}
+
+Неуспешный ответ: 
+Http статус в диапазоне от 400 до 500
+
+{
+  "error": "contractor_not_found",
+  "message": "Исполнитель не найден"
+}
+
+    3. Смена статуса задачи 
+Метод: 
+Принять задачу POST /tasks/{task_id}/accept
+Отклонить задачу POST /tasks/{task_id}/reject
+
+Параметр	Тип	Описание
+id	integer	уникальный идентификатор задачи
+name	string	название задачи
+status	string	opened - открыта/rejected_by_customer - отклонена заказчиком/completed - завершена
+cost	float	стоимость задачи, сумма, которую получит исполнитель за выполненную задачу
+cost_full	float	стоимость с комиссией для заказчика
+currency	string	валюта (RUB, USD, EUR)
+contractor	object	исполнитель
+contractor.id	integer	уникальный номер исполнителя
+contractor.first_name	string	имя исполнителя
+contractor.last_name	string	фамилия исполнителя
+contractor.email	string	email исполнителя
+category	object	категория задачи
+category.id	integer	уникальный номер категории задачи из справочника
+category.code	string	буквенный код категории
+category.label	string	описание категории
+service	object	описание услуги/работы
+service.id	integer	уникальный номер услуги из справочника
+service.label	string	описание услуги/работы
+service.act_name	string	описание услуги/работы, попадает в акт
+attributes	list of attribute	список атрибутов задачи
+attribute.id	integer	уникальный номер атрибута из справочника
+attribute.code	string	буквенный код атрибута
+attribute.label	string	описание атрибута
+attribute.value	string	значение атрибута
+external_id	string	идентификатор в системе заказчика
+Пример запроса: 
+POST /tasks/67890/accept
+Content-Type: application/json
+Authorization: Bearer <token>
+
+Успешный ответ: 
+200 Successful Response 
+
+{
+  "task_id": "67890",
+  "status": "accepted"
+}
+
+Неуспешный ответ: 
+Http статус в диапазоне от 400 до 500
+
+{
+  "error": "task_not_found",
+  "message": "Задача не найдена"
+}
+
+
+
+    4. Оплата 
+Метод: 
+POST 
+
+ЮMoney POST /payout/yoomoney/create
+WebMoney Z POST /payout/webmoney/create
+Криптокошелек TON POST /payout/ton/create
+Криптокошелек USDT POST /payout/usdt/create
+Банковская карта POST /payout/bank_card/create
+
+Параметр	Тип	Описание
+contractor_id	integer	уникальный идентификатор исполнителя
+requisites_id	integer	уникальный идентификатор реквизита
+task_id	integer	уникальный идентификатор задачи, необязательный параметр
+amount	float	сумма вывода
+currency	string	валюта (RUB, USD, EUR)
+description	string	назначение платежа (максимум 128 символов), необязательный параметр
+service_code	string	Код услуги из справочника, необязательный параметр
+
+Пример запроса: 
+POST /payouts
+Content-Type: application/json
+Authorization: Bearer <token>
+
+Успешный ответ: 
+200 Successful Response 
+
+{
+  "payout_id": "999",
+  "status": "processing"
+}
+
+Неуспешный ответ: 
+Http статус в диапазоне от 400 до 500
+
+{
+  "error": "requisites_not_found",
+  "message": "У исполнителя отсутствуют реквизиты для выплат"
+}
